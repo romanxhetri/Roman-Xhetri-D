@@ -1,0 +1,41 @@
+import { NavItem } from './types';
+
+export enum View {
+  HOME = 'home',
+  PRODUCT = 'product',
+  RESOURCES = 'resources',
+  PRICING = 'pricing',
+  BLOG = 'blog',
+  FACEBOOK = 'facebook',
+  CHATGPT = 'chatgpt',
+  LAPTOPS = 'laptops',
+  AI_SEARCH = 'ai_search',
+  GAMES = 'games',
+  CHAT = 'chat',
+  MEDIA_CREATION = 'media_creation',
+  LIVE_CONVERSATION = 'live_conversation',
+  TTS = 'tts',
+  CODE_WIZARD = 'code_wizard',
+  AETHER_CANVAS = 'aether_canvas',
+  DATA_ORACLE = 'data_oracle',
+}
+
+export const NAV_ITEMS: NavItem[] = [
+  { label: 'Home', view: View.HOME, description: "Return to the main dashboard." },
+  { label: 'Product', view: View.PRODUCT, description: "Explore our suite of AI-powered products and demos." },
+  { label: 'Resources', view: View.RESOURCES, description: "Access interactive guides and our knowledge base." },
+  { label: 'Pricing', view: View.PRICING, description: "Use our dynamic calculator to find the perfect plan." },
+  { label: 'Blog', view: View.BLOG, description: "Read the latest from our team in a stunning 3D content hub." },
+  { label: 'Facebook', view: View.FACEBOOK, description: "Experience a fully-featured social platform clone." },
+  { label: 'ChatGPT', view: View.CHATGPT, description: "Engage with our advanced, same-to-same ChatGPT-like AI." },
+  { label: 'Laptops', view: View.LAPTOPS, description: "Browse our e-commerce store for the latest tech." },
+  { label: 'AI Search', view: View.AI_SEARCH, description: "Go beyond keywords with our advanced semantic search engine." },
+  { label: 'Games', view: View.GAMES, description: "Jump into our interactive portal for AI-powered games." },
+  { label: 'Chat', view: View.CHAT, description: "Connect via our next-generation multi-modal communication hub." },
+  { label: 'Media Creation', view: View.MEDIA_CREATION, description: "Generate stunning visuals, videos, and edits from text prompts." },
+  { label: 'Live Conversation', view: View.LIVE_CONVERSATION, description: "Have a real-time, voice-to-voice conversation with SageX." },
+  { label: 'Text-to-Speech', view: View.TTS, description: "Convert text into natural-sounding speech with AI voices." },
+  { label: 'Code Wizard', view: View.CODE_WIZARD, description: "Use AI to analyze, debug, and rewrite your application's code." },
+  { label: 'Aether Canvas', view: View.AETHER_CANVAS, description: "Visually build new UI components with AI in real-time." },
+  { label: 'Data Oracle', view: View.DATA_ORACLE, description: "Upload structured data and ask the AI to analyze it for insights." },
+];

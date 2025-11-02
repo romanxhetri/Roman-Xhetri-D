@@ -1,0 +1,9 @@
+{
+  "name": "SageX AI Universe",
+  "description": "An immersive AI assistant experience set in a magical universe, featuring advanced chat, AI-powered tools, and a dynamic, interactive interface.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera",
+    "microphone"
+  ]
+}
