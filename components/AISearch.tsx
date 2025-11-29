@@ -10,19 +10,9 @@ const AISearch: React.FC = () => {
   const [response, setResponse] = useState<string | null>(null);
   const [sources, setSources] = useState<GroundingChunk[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Removed automatic location request
   const [location, setLocation] = useState<GeolocationCoordinates | null>(null);
 
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation(position.coords);
-      },
-      (err) => {
-        console.warn(`Geolocation error: ${err.message}`);
-      }
-    );
-  }, []);
-  
   const handleSearch = async () => {
     if (!query.trim() || isLoading) return;
 

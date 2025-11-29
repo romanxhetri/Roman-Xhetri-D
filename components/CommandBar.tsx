@@ -5,14 +5,8 @@ import { LoadingSpinner, SearchIcon } from './Icons';
 export const CommandBar: React.FC = () => {
     const [command, setCommand] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    // Removed automatic location request
     const [location, setLocation] = useState<GeolocationCoordinates | null>(null);
-
-    useEffect(() => {
-        navigator.geolocation.getCurrentPosition(
-            (position) => setLocation(position.coords),
-            (err) => console.warn(`Geolocation error in CommandBar: ${err.message}`)
-        );
-    }, []);
 
     const handleCommand = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && command.trim() && !isLoading) {

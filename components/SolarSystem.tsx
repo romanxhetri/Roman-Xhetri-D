@@ -93,6 +93,10 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
         keyState: new Set<string>(),
         isDragging: false,
         previousMousePosition: { x: 0, y: 0 },
+        // Touch state for mobile simulation
+        touchStart: { x: 0, y: 0 },
+        isTouchDragging: false,
+        mobileMove: { forward: false, backward: false }
     });
 
     const clock = useRef<any>(null);
@@ -116,7 +120,8 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
         const camera = new THREE.PerspectiveCamera(75, mountNode.clientWidth / mountNode.clientHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(mountNode.clientWidth, mountNode.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        // Optimize for performance on high DPI screens
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         mountNode.appendChild(renderer.domElement);
 
         camera.position.z = 30;
@@ -140,9 +145,13 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
         sun.userData.name = 'SageX';
         solarSystemGroup.add(sun);
 
+        // Reduced star count for mobile performance
+        const isMobile = window.innerWidth < 768;
+        const starCount = isMobile ? 1500 : 5000;
+        
         const starsGeometry = new THREE.BufferGeometry();
         const starsVertices = [];
-        for (let i = 0; i < 5000; i++) {
+        for (let i = 0; i < starCount; i++) {
             const x = THREE.MathUtils.randFloatSpread(2000);
             const y = THREE.MathUtils.randFloatSpread(2000);
             const z = THREE.MathUtils.randFloatSpread(2000);
@@ -162,6 +171,7 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
             const distanceFromSun = 8 + index * 2.5;
             const size = 0.5 + Math.random() * 0.5;
 
+            // Simplify geometry slightly for performance
             const planetGeometry = new THREE.SphereGeometry(size, 16, 16);
             const planetMaterial = new THREE.MeshStandardMaterial({
                 color: PLANET_COLORS[feature.view] || 0xffffff,
@@ -196,12 +206,39 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
             };
 
             if (viewMode === 'simulation') {
+                // Mouse look
                 const onMouseMove = (event: MouseEvent) => {
                     if (document.pointerLockElement !== mountNode) return;
                     camera.rotation.y -= event.movementX * 0.002;
                     camera.rotation.x -= event.movementY * 0.002;
                     camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
                 };
+
+                // Touch look for mobile
+                const onTouchStart = (event: TouchEvent) => {
+                    if (event.touches.length === 1) {
+                         stateRef.current.touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+                         stateRef.current.isTouchDragging = true;
+                    }
+                };
+                
+                const onTouchMove = (event: TouchEvent) => {
+                    if (stateRef.current.isTouchDragging && event.touches.length === 1) {
+                        const deltaX = event.touches[0].clientX - stateRef.current.touchStart.x;
+                        const deltaY = event.touches[0].clientY - stateRef.current.touchStart.y;
+                        
+                        camera.rotation.y -= deltaX * 0.005;
+                        camera.rotation.x -= deltaY * 0.005;
+                        camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+                        
+                        stateRef.current.touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+                    }
+                };
+
+                 const onTouchEnd = () => {
+                     stateRef.current.isTouchDragging = false;
+                 };
+
                 const onKeyDown = (event: KeyboardEvent) => {
                     stateRef.current.keyState.add(event.key.toLowerCase());
                     if (event.key.toLowerCase() === 'e' && nearbyPlanet) {
@@ -210,12 +247,21 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                     }
                 };
                 const onKeyUp = (event: KeyboardEvent) => stateRef.current.keyState.delete(event.key.toLowerCase());
-                const onClickToLock = () => mountNode.requestPointerLock();
+                const onClickToLock = () => {
+                    // Only request pointer lock on non-touch devices to avoid messing up touch controls
+                    if (!('ontouchstart' in window)) {
+                         mountNode.requestPointerLock();
+                    }
+                };
 
                 addListener('mousemove', onMouseMove as EventListener, document);
                 addListener('keydown', onKeyDown as EventListener, document);
                 addListener('keyup', onKeyUp as EventListener, document);
                 addListener('click', onClickToLock as EventListener);
+                addListener('touchstart', onTouchStart as EventListener);
+                addListener('touchmove', onTouchMove as EventListener);
+                addListener('touchend', onTouchEnd as EventListener);
+
             } else { // Orbit Mode
                 const onMouseDown = (event: MouseEvent) => {
                     stateRef.current.isDragging = true;
@@ -231,6 +277,27 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                     stateRef.current.previousMousePosition = { x: event.clientX, y: event.clientY };
                 };
                 const onMouseUp = () => stateRef.current.isDragging = false;
+                
+                // Touch Orbit
+                const onTouchStart = (event: TouchEvent) => {
+                    if (event.touches.length === 1) {
+                         stateRef.current.isDragging = true;
+                         stateRef.current.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+                    }
+                };
+                
+                 const onTouchMove = (event: TouchEvent) => {
+                    if (stateRef.current.isDragging && event.touches.length === 1) {
+                        const deltaX = event.touches[0].clientX - stateRef.current.previousMousePosition.x;
+                        const deltaY = event.touches[0].clientY - stateRef.current.previousMousePosition.y;
+                        solarSystemGroup.rotation.y += deltaX * 0.005;
+                        solarSystemGroup.rotation.x += deltaY * 0.005;
+                        solarSystemGroup.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, solarSystemGroup.rotation.x));
+                        stateRef.current.previousMousePosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+                    }
+                 };
+
+
                 const onWheel = (event: WheelEvent) => {
                     camera.position.z += event.deltaY * 0.01;
                     camera.position.z = Math.max(15, Math.min(70, camera.position.z));
@@ -259,6 +326,9 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                 addListener('mousedown', onMouseDown as EventListener);
                 addListener('mousemove', onMouseMove as EventListener);
                 addListener('mouseup', onMouseUp as EventListener);
+                addListener('touchstart', onTouchStart as EventListener);
+                addListener('touchmove', onTouchMove as EventListener);
+                addListener('touchend', onMouseUp as EventListener); // Reuse mouse up logic
                 addListener('wheel', onWheel as EventListener);
                 addListener('click', onClickPlanet as EventListener);
             }
@@ -272,10 +342,15 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
 
             if (viewMode === 'simulation') {
                 const moveSpeed = 15.0;
+                // Keyboard controls
                 if (stateRef.current.keyState.has('w')) camera.translateZ(-moveSpeed * deltaTime);
                 if (stateRef.current.keyState.has('s')) camera.translateZ(moveSpeed * deltaTime);
                 if (stateRef.current.keyState.has('a')) camera.translateX(-moveSpeed * deltaTime);
                 if (stateRef.current.keyState.has('d')) camera.translateX(moveSpeed * deltaTime);
+                
+                // Mobile controls
+                if (stateRef.current.mobileMove.forward) camera.translateZ(-moveSpeed * deltaTime);
+                if (stateRef.current.mobileMove.backward) camera.translateZ(moveSpeed * deltaTime);
             }
 
             let closestDist = Infinity;
@@ -416,6 +491,26 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                     <button onClick={() => setViewMode('cards')} className={`p-2 rounded-md transition-colors ${viewMode === 'cards' ? 'bg-purple-600' : 'hover:bg-white/10'}`} title="Grid View"><GridIcon /></button>
                 </div>
 
+                {/* Mobile Simulation Controls */}
+                {viewMode === 'simulation' && (
+                    <div className="absolute bottom-20 right-4 flex flex-col gap-4 pointer-events-auto md:hidden">
+                        <button 
+                            className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:bg-purple-500/50"
+                            onTouchStart={(e) => { e.preventDefault(); stateRef.current.mobileMove.forward = true; }}
+                            onTouchEnd={(e) => { e.preventDefault(); stateRef.current.mobileMove.forward = false; }}
+                        >
+                            ▲
+                        </button>
+                         <button 
+                            className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:bg-purple-500/50"
+                            onTouchStart={(e) => { e.preventDefault(); stateRef.current.mobileMove.backward = true; }}
+                            onTouchEnd={(e) => { e.preventDefault(); stateRef.current.mobileMove.backward = false; }}
+                        >
+                            ▼
+                        </button>
+                    </div>
+                )}
+
                 <AnimatePresence>
                 {viewMode === 'simulation' && nearbyPlanet && (
                     <motion.div
@@ -424,8 +519,17 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                     >
-                        <p>Press <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">E</kbd> to enter</p>
-                        <p className="font-bold text-lg">{nearbyPlanet.name}</p>
+                        <p className="hidden md:block">Press <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">E</kbd> to enter</p>
+                        <button 
+                            className="md:hidden mt-1 px-4 py-2 bg-purple-600 rounded-lg pointer-events-auto"
+                            onClick={() => {
+                                setIsInteracting(true);
+                                setActiveView(nearbyPlanet.view as View);
+                            }}
+                        >
+                            Tap to Enter
+                        </button>
+                        <p className="font-bold text-lg mt-1">{nearbyPlanet.name}</p>
                     </motion.div>
                 )}
                 </AnimatePresence>
@@ -433,7 +537,7 @@ export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                  <AnimatePresence>
                 {viewMode === 'simulation' && (
                     <motion.div
-                        className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/10 text-sm"
+                        className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/10 text-sm hidden md:block"
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 20 }}

@@ -59,6 +59,7 @@ const ChatInterface: React.FC = () => {
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // Removed automatic location request
   const [location, setLocation] = useState<GeolocationCoordinates | null>(null);
   const [ttsLoadingId, setTtsLoadingId] = useState<string | null>(null);
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(null);
@@ -120,17 +121,6 @@ const ChatInterface: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
   
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            setLocation(position.coords);
-        },
-        (err) => {
-            console.warn(`Geolocation error in chat: ${err.message}`);
-        }
-    );
-  }, []);
-
   useEffect(() => {
     scrollToBottom();
     try {
