@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { View } from '../constants';
-import SolarSystem from './SolarSystem';
+// FIX: Changed to a named import as SolarSystem does not have a default export.
+import { SolarSystem } from './SolarSystem';
 
 interface HomePageProps {
     setActiveView: (view: View) => void;

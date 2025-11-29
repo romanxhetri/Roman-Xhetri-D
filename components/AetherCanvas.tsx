@@ -62,7 +62,7 @@ const AetherCanvas: React.FC = () => {
 
     return (
         <motion.div
-            className="w-full h-full md:h-[85vh] flex flex-col bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-2 md:p-4"
+            className="w-full max-w-full min-h-[85vh] flex flex-col bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-2 md:p-4"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}

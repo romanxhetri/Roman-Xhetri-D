@@ -33,3 +33,40 @@ export interface FileChange {
   description: string;
   content: string;
 }
+
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  category: 'T-Shirts' | 'Hoodies' | 'Accessories';
+  description: string;
+}
+
+export interface Laptop {
+    id: string;
+    name: string;
+    price: number;
+    imageUrl: string;
+    specs: {
+      cpu: string;
+      gpu: string;
+      ram: string;
+      storage: string;
+      display: string;
+    }
+}
+
+export interface Mobile {
+    id: string;
+    name: string;
+    price: number;
+    imageUrl: string;
+    specs: {
+      cpu: string;
+      ram: string;
+      storage: string;
+      display: string;
+      camera: string;
+    }
+}

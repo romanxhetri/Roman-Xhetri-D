@@ -48,7 +48,7 @@ const AISearch: React.FC = () => {
 
   return (
     <motion.div 
-        className="w-full h-full md:max-w-4xl md:h-[75vh] flex flex-col bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-4 md:p-6"
+        className="w-full md:max-w-4xl md:min-h-[75vh] flex flex-col bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-4 md:p-6"
         initial={{ opacity: 0, y: 50, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -50, scale: 0.9 }}

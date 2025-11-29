@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS, View } from '../constants';
 import { DraggableItem } from './DraggableItem';
-import { UpdateIcon, LanguageIcon, LogoIcon, MenuIcon, CloseIcon } from './Icons';
+import { UpdateIcon, LanguageIcon, LogoIcon, MenuIcon, CloseIcon, HomeIcon } from './Icons';
 import { CommandBar } from './CommandBar';
 
 interface HeaderProps {
@@ -34,16 +34,34 @@ export const Header: React.FC<HeaderProps> = ({ activeView, setActiveView }) => 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 p-4" style={{ perspective: '1000px' }}>
       <div className="container mx-auto flex justify-between items-center bg-black/30 backdrop-blur-md rounded-2xl p-2 border border-white/10 shadow-lg relative">
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setActiveView(View.HOME)}
-        >
-            <LogoIcon />
-            <h1 className="text-xl md:text-2xl font-bold tracking-wider text-shadow-glow">SageX</h1>
-        </motion.div>
+        <div className="flex items-center gap-2">
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => setActiveView(View.HOME)}
+            >
+                <LogoIcon />
+                <h1 className="text-xl md:text-2xl font-bold tracking-wider text-shadow-glow">SageX</h1>
+            </motion.div>
+            <AnimatePresence>
+                {activeView !== View.HOME && (
+                    <motion.button
+                        onClick={() => setActiveView(View.HOME)}
+                        initial={{ opacity: 0, x: -20, scale: 0.8 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -20, scale: 0.8 }}
+                        whileHover={{ scale: 1.1, rotate: -10 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="p-2 rounded-full bg-white/10 hover:bg-purple-500/30"
+                        title="Back to Universe"
+                    >
+                        <HomeIcon />
+                    </motion.button>
+                )}
+            </AnimatePresence>
+        </div>
 
         <div className="hidden md:flex flex-1 justify-center px-8">
             <CommandBar />

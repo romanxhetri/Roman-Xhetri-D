@@ -1,17 +1,19 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { VideoConjurerIcon, MagicWandIcon, EditIcon, LoadingSpinner } from './Icons';
+import { VideoConjurerIcon, MagicWandIcon, EditIcon, LoadingSpinner, TshirtIcon } from './Icons';
 
 const VideoConjurer = lazy(() => import('./VideoConjurer'));
 const ImageWizard = lazy(() => import('./ImageWizard'));
 const ImageEditor = lazy(() => import('./ImageEditor'));
+const ClothingDesigner = lazy(() => import('./ClothingDesigner'));
 
-type MediaTab = 'generate' | 'edit' | 'video';
+type MediaTab = 'generate' | 'edit' | 'video' | 'design';
 
 const TABS: { id: MediaTab; label: string; icon: React.ReactNode }[] = [
     { id: 'generate', label: 'Image Wizard', icon: <MagicWandIcon className="w-5 h-5" /> },
     { id: 'edit', label: 'Image Editor', icon: <EditIcon className="w-5 h-5" /> },
     { id: 'video', label: 'Video Conjurer', icon: <VideoConjurerIcon className="w-5 h-5" /> },
+    { id: 'design', label: 'Clothing Designer', icon: <TshirtIcon className="w-5 h-5" /> },
 ];
 
 const MediaCreationHub: React.FC = () => {
@@ -22,13 +24,14 @@ const MediaCreationHub: React.FC = () => {
             case 'video': return <VideoConjurer />;
             case 'generate': return <ImageWizard />;
             case 'edit': return <ImageEditor />;
+            case 'design': return <ClothingDesigner />;
             default: return null;
         }
     };
 
     return (
         <motion.div 
-            className="w-full h-full md:max-w-6xl md:h-[85vh] flex flex-col bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-2 sm:p-6"
+            className="w-full md:max-w-6xl md:min-h-[85vh] flex flex-col bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-2 sm:p-6"
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}

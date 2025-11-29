@@ -10,7 +10,7 @@ interface FeatureShowcaseProps {
 const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({ title, description }) => {
   return (
     <motion.div
-      className="w-full h-full md:max-w-4xl md:h-[75vh] flex flex-col items-center justify-center text-center bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-4 md:p-8"
+      className="w-full md:max-w-4xl md:min-h-[75vh] flex flex-col items-center justify-center text-center bg-black/40 backdrop-blur-xl md:rounded-2xl border border-white/10 shadow-2xl p-4 md:p-8"
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}

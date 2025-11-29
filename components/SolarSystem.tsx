@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NAV_ITEMS, View } from '../constants';
 import { motion, AnimatePresence } from 'framer-motion';
-import { JoystickIcon, OrbitIcon } from './Icons';
+import { 
+    JoystickIcon, OrbitIcon, GridIcon, ChatIcon, SearchIcon, MagicWandIcon, LiveIcon, 
+    TtsIcon, TripPlannerIcon, StoryWeaverIcon, CodeWizardIcon, AetherCanvasIcon, 
+    DataOracleIcon, ProductIcon, LaptopsIcon, PricingIcon, BlogIcon, GamesIcon, DreamWeaverIcon,
+    CosmicComposerIcon, D20Icon, TemporalInvestigatorIcon, BioSymphonyIcon, EchoForgeIcon,
+    MobileIcon, TroubleshooterIcon
+} from './Icons';
 
 // Tell TypeScript about the global THREE and TWEEN objects from the CDN scripts
 declare const THREE: any;
@@ -19,29 +25,66 @@ interface PlanetLabel {
     isOccluded: boolean;
 }
 
+type ViewMode = 'simulation' | 'orbit' | 'cards';
+
 const PLANET_COLORS: { [key: string]: number } = {
-    [View.PRODUCT]: 0x3b82f6, // blue-500
-    [View.RESOURCES]: 0x22c55e, // green-500
-    [View.PRICING]: 0x14b8a6, // teal-500
-    [View.BLOG]: 0xf97316, // orange-500
-    [View.FACEBOOK]: 0x3b82f6, // blue-500
-    [View.CHATGPT]: 0x8b5cf6, // violet-500
-    [View.LAPTOPS]: 0x64748b, // slate-500
-    [View.AI_SEARCH]: 0x0ea5e9, // sky-500
-    [View.GAMES]: 0xef4444, // red-500
-    [View.CHAT]: 0xec4899, // pink-500
-    [View.MEDIA_CREATION]: 0xd946ef, // fuchsia-500
-    [View.LIVE_CONVERSATION]: 0xf59e0b, // amber-500
-    [View.TTS]: 0x10b981, // emerald-500
-    [View.CODE_WIZARD]: 0x84cc16, // lime-500
-    [View.AETHER_CANVAS]: 0xf43f5e, // rose-600
-    [View.DATA_ORACLE]: 0x14b8a6, // teal-500
+    [View.PRODUCT]: 0x3b82f6,
+    [View.PRICING]: 0x14b8a6,
+    [View.BLOG]: 0xf97316,
+    [View.FACEBOOK]: 0x3b82f6,
+    [View.CHATGPT]: 0x8b5cf6,
+    [View.LAPTOPS]: 0x64748b,
+    [View.MOBILES]: 0x22c55e,
+    [View.DEVICE_TROUBLESHOOTER]: 0x06b6d4,
+    [View.AI_SEARCH]: 0x0ea5e9,
+    [View.GAMES]: 0xef4444,
+    [View.CHAT]: 0xec4899,
+    [View.MEDIA_CREATION]: 0xd946ef,
+    [View.LIVE_CONVERSATION]: 0xf59e0b,
+    [View.TTS]: 0x10b981,
+    [View.CODE_WIZARD]: 0x84cc16,
+    [View.AETHER_CANVAS]: 0xf43f5e,
+    [View.DATA_ORACLE]: 0x14b8a6,
+    [View.TRIP_PLANNER]: 0x06b6d4,
+    [View.STORY_WEAVER]: 0xfb923c,
+    [View.DREAM_WEAVER]: 0x4c1d95,
+    [View.COSMIC_COMPOSER]: 0x22d3ee,
+    [View.MYTHOS_ENGINE]: 0xbe123c,
+    [View.TEMPORAL_INVESTIGATOR]: 0xca8a04,
+    [View.BIO_SYMPHONY]: 0xdb2777,
+    [View.ECHO_FORGE]: 0x78716c,
+};
+
+const iconMap: Record<string, React.FC<{className?: string}>> = {
+  [View.CHATGPT]: ChatIcon,
+  [View.AI_SEARCH]: SearchIcon,
+  [View.MEDIA_CREATION]: MagicWandIcon,
+  [View.LIVE_CONVERSATION]: LiveIcon,
+  [View.TTS]: TtsIcon,
+  [View.TRIP_PLANNER]: TripPlannerIcon,
+  [View.STORY_WEAVER]: StoryWeaverIcon,
+  [View.DREAM_WEAVER]: DreamWeaverIcon,
+  [View.COSMIC_COMPOSER]: CosmicComposerIcon,
+  [View.MYTHOS_ENGINE]: D20Icon,
+  [View.CODE_WIZARD]: CodeWizardIcon,
+  [View.AETHER_CANVAS]: AetherCanvasIcon,
+  [View.DATA_ORACLE]: DataOracleIcon,
+  [View.PRODUCT]: ProductIcon,
+  [View.LAPTOPS]: LaptopsIcon,
+  [View.MOBILES]: MobileIcon,
+  [View.DEVICE_TROUBLESHOOTER]: TroubleshooterIcon,
+  [View.PRICING]: PricingIcon,
+  [View.BLOG]: BlogIcon,
+  [View.GAMES]: GamesIcon,
+  [View.TEMPORAL_INVESTIGATOR]: TemporalInvestigatorIcon,
+  [View.BIO_SYMPHONY]: BioSymphonyIcon,
+  [View.ECHO_FORGE]: EchoForgeIcon,
 };
 
 
-const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
+export const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
     const mountRef = useRef<HTMLDivElement>(null);
-    const [isSimulationMode, setSimulationMode] = useState(true);
+    const [viewMode, setViewMode] = useState<ViewMode>('orbit');
     const [labels, setLabels] = useState<PlanetLabel[]>([]);
     const [nearbyPlanet, setNearbyPlanet] = useState<{ view: View; name: string } | null>(null);
     const [isInteracting, setIsInteracting] = useState(false);
@@ -52,37 +95,41 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
         previousMousePosition: { x: 0, y: 0 },
     });
 
-    const clock = useRef<any>(null); // Use any for THREE.Clock
+    const clock = useRef<any>(null);
 
     useEffect(() => {
-        if (!mountRef.current) return;
         const mountNode = mountRef.current;
+        
+        if (viewMode === 'cards' || !mountNode) {
+            // Cleanup THREE.js instance if it exists
+             if (mountNode && mountNode.firstChild) {
+                mountNode.removeChild(mountNode.firstChild);
+            }
+            return;
+        }
+
         if (!clock.current) {
             clock.current = new THREE.Clock();
         }
 
-        // Scene setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, mountNode.clientWidth / mountNode.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(mountNode.clientWidth, mountNode.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         mountNode.appendChild(renderer.domElement);
 
         camera.position.z = 30;
-        camera.rotation.order = 'YXZ'; // For FPS-style controls
+        camera.rotation.order = 'YXZ'; 
 
-        // Lighting
         scene.add(new THREE.AmbientLight(0x404040, 2));
         const sunLight = new THREE.PointLight(0xfffde8, 2.5, 200);
         sunLight.position.set(0, 0, 0);
         scene.add(sunLight);
 
-        // System group
         const solarSystemGroup = new THREE.Group();
         scene.add(solarSystemGroup);
 
-        // Sun
         const sunGeometry = new THREE.SphereGeometry(4, 32, 32);
         const sunMaterial = new THREE.MeshStandardMaterial({
             emissive: 0xfffde8,
@@ -93,7 +140,6 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
         sun.userData.name = 'SageX';
         solarSystemGroup.add(sun);
 
-        // Starfield
         const starsGeometry = new THREE.BufferGeometry();
         const starsVertices = [];
         for (let i = 0; i < 5000; i++) {
@@ -107,7 +153,6 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
         const starfield = new THREE.Points(starsGeometry, starsMaterial);
         scene.add(starfield);
 
-        // Planets
         const features = NAV_ITEMS.filter(item => item.view !== View.HOME);
         const planets: any[] = [];
         const planetLabelsData: Omit<PlanetLabel, 'x' | 'y' | 'isOccluded'>[] = [];
@@ -139,21 +184,18 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        // --- CONTROLS ---
-        let eventListeners: { type: string, handler: EventListenerOrEventListenerObject }[] = [];
+        let eventListeners: { type: string, handler: EventListenerOrEventListenerObject, target: Document | HTMLElement }[] = [];
 
         const setupControls = () => {
-             // Clear previous listeners
-            eventListeners.forEach(({ type, handler }) => mountNode.removeEventListener(type, handler));
+            eventListeners.forEach(({ type, handler, target }) => target.removeEventListener(type, handler));
             eventListeners = [];
             
-            const addListener = (type: string, handler: EventListenerOrEventListenerObject) => {
-                mountNode.addEventListener(type, handler);
-                eventListeners.push({ type, handler });
+            const addListener = (type: string, handler: EventListenerOrEventListenerObject, target: Document | HTMLElement = mountNode) => {
+                target.addEventListener(type, handler);
+                eventListeners.push({ type, handler, target });
             };
 
-            if (isSimulationMode) {
-                 // --- SIMULATION MODE ---
+            if (viewMode === 'simulation') {
                 const onMouseMove = (event: MouseEvent) => {
                     if (document.pointerLockElement !== mountNode) return;
                     camera.rotation.y -= event.movementX * 0.002;
@@ -170,18 +212,11 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                 const onKeyUp = (event: KeyboardEvent) => stateRef.current.keyState.delete(event.key.toLowerCase());
                 const onClickToLock = () => mountNode.requestPointerLock();
 
-                document.addEventListener('mousemove', onMouseMove as EventListener);
-                document.addEventListener('keydown', onKeyDown as EventListener);
-                document.addEventListener('keyup', onKeyUp as EventListener);
+                addListener('mousemove', onMouseMove as EventListener, document);
+                addListener('keydown', onKeyDown as EventListener, document);
+                addListener('keyup', onKeyUp as EventListener, document);
                 addListener('click', onClickToLock as EventListener);
-                eventListeners.push(
-                    { type: 'mousemove', handler: onMouseMove as EventListener },
-                    { type: 'keydown', handler: onKeyDown as EventListener },
-                    { type: 'keyup', handler: onKeyUp as EventListener }
-                );
-
-            } else {
-                 // --- ORBIT MODE ---
+            } else { // Orbit Mode
                 const onMouseDown = (event: MouseEvent) => {
                     stateRef.current.isDragging = true;
                     stateRef.current.previousMousePosition = { x: event.clientX, y: event.clientY };
@@ -209,15 +244,11 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
                     if (intersects.length > 0) {
                         const targetPlanet = intersects[0].object;
                         const targetView = targetPlanet.userData.view;
-                        
                         setIsInteracting(true);
-                        
                         const targetPosition = new THREE.Vector3();
                         targetPlanet.getWorldPosition(targetPosition);
-                        
                         const direction = new THREE.Vector3().subVectors(camera.position, targetPosition).normalize();
                         const finalPosition = new THREE.Vector3().addVectors(targetPosition, direction.multiplyScalar(5));
-
                         new TWEEN.Tween(camera.position)
                             .to(finalPosition, 1000)
                             .easing(TWEEN.Easing.Quadratic.InOut)
@@ -235,152 +266,185 @@ const SolarSystem: React.FC<SolarSystemProps> = ({ setActiveView }) => {
 
         setupControls();
 
-        // Animation loop
         const animate = (time: number) => {
             TWEEN.update(time);
             const deltaTime = clock.current.getDelta();
 
-            if (isSimulationMode) {
+            if (viewMode === 'simulation') {
                 const moveSpeed = 15.0;
                 if (stateRef.current.keyState.has('w')) camera.translateZ(-moveSpeed * deltaTime);
                 if (stateRef.current.keyState.has('s')) camera.translateZ(moveSpeed * deltaTime);
                 if (stateRef.current.keyState.has('a')) camera.translateX(-moveSpeed * deltaTime);
                 if (stateRef.current.keyState.has('d')) camera.translateX(moveSpeed * deltaTime);
-                if (stateRef.current.keyState.has(' ')) camera.position.y += moveSpeed * deltaTime;
-                if (stateRef.current.keyState.has('shift')) camera.position.y -= moveSpeed * deltaTime;
             }
+
+            let closestDist = Infinity;
+            let closestPlanet = null;
 
             solarSystemGroup.children.forEach(child => {
-                 if (child instanceof THREE.Group && child.userData.rotationSpeed) {
+                if (child.userData.rotationSpeed) {
                     child.rotation.y += child.userData.rotationSpeed;
-                 }
+                }
             });
+
+            const newLabels = planetLabelsData.map(labelData => {
+                const planet = planets.find(p => p.userData.view === labelData.id);
+                if (!planet) return null;
+
+                const worldPosition = new THREE.Vector3();
+                planet.getWorldPosition(worldPosition);
+
+                const distanceToCamera = camera.position.distanceTo(worldPosition);
+                if (viewMode === 'simulation' && distanceToCamera < closestDist) {
+                    closestDist = distanceToCamera;
+                    closestPlanet = { view: planet.userData.view, name: planet.userData.name };
+                }
+
+                const screenPosition = worldPosition.clone().project(camera);
+                const isOccluded = screenPosition.z > 1;
+
+                return {
+                    ...labelData,
+                    x: (screenPosition.x * 0.5 + 0.5) * mountNode.clientWidth,
+                    y: (-screenPosition.y * 0.5 + 0.5) * mountNode.clientHeight,
+                    isOccluded
+                };
+            }).filter(Boolean) as PlanetLabel[];
             
-            const newLabels: PlanetLabel[] = [];
-            let closestPlanet = null;
-            if (isSimulationMode) {
-                let minDistance = 5;
-                planets.forEach(planet => {
-                    const vector = new THREE.Vector3();
-                    planet.getWorldPosition(vector);
-                    const distance = camera.position.distanceTo(vector);
-                    if(distance < minDistance) {
-                        minDistance = distance;
-                        closestPlanet = planet.userData;
-                    }
-                });
-            }
-            setNearbyPlanet(closestPlanet);
-
-            planets.forEach((planet, i) => {
-                const vector = new THREE.Vector3();
-                planet.getWorldPosition(vector);
-                
-                const cameraDirection = new THREE.Vector3();
-                camera.getWorldDirection(cameraDirection);
-                const planetDirection = vector.clone().sub(camera.position);
-                const isOccluded = cameraDirection.dot(planetDirection) < 0;
-
-                vector.project(camera);
-                
-                const x = (vector.x * .5 + .5) * mountNode.clientWidth;
-                const y = (vector.y * -.5 + .5) * mountNode.clientHeight;
-
-                newLabels.push({ ...planetLabelsData[i], x, y, isOccluded });
-            });
             setLabels(newLabels);
+
+            if (viewMode === 'simulation') {
+                setNearbyPlanet(closestDist < 5 ? closestPlanet : null);
+            }
             
-            renderer.render(scene, camera);
             requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         };
 
         animate(0);
 
         const handleResize = () => {
-            if (!mountNode) return;
             camera.aspect = mountNode.clientWidth / mountNode.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(mountNode.clientWidth, mountNode.clientHeight);
         };
-
         window.addEventListener('resize', handleResize);
 
-        // Cleanup
         return () => {
             window.removeEventListener('resize', handleResize);
-            // This is a bit of a workaround to clean up document listeners
-            eventListeners.forEach(({ type, handler }) => {
-                if (type === 'click' || type === 'mousedown' || type === 'mouseup' || type === 'wheel') {
-                    mountNode.removeEventListener(type, handler);
-                } else {
-                    document.removeEventListener(type, handler);
-                }
-            });
-            mountNode.removeChild(renderer.domElement);
+            if (mountNode && mountNode.firstChild) {
+                mountNode.removeChild(mountNode.firstChild);
+            }
+            eventListeners.forEach(({ type, handler, target }) => target.removeEventListener(type, handler));
         };
-    }, [setActiveView, isSimulationMode]); // Rerun effect when mode changes
+    }, [viewMode]);
 
     return (
-        <div className={`w-full h-full relative ${isSimulationMode ? 'cursor-crosshair' : 'cursor-grab'}`}>
-             <div ref={mountRef} className="w-full h-full" />
-
-             <button 
-                onClick={() => setSimulationMode(prev => !prev)}
-                className="absolute top-24 right-4 z-50 p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-purple-500/50 transition-all"
-                title={isSimulationMode ? "Switch to Orbit Mode" : "Switch to Simulation Mode"}
-             >
-                {isSimulationMode ? <OrbitIcon /> : <JoystickIcon />}
-             </button>
-
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none p-4 w-full">
-                 <motion.div initial={{opacity: 0}} animate={{opacity: isInteracting ? 0 : 1}} transition={{duration: 0.5}}>
-                    <h1 className="text-4xl sm:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400">
-                        SageX AI Universe
-                    </h1>
-                    {isSimulationMode ? (
-                        <>
-                         <p className="text-gray-300 mt-2 text-sm md:text-base">Click to start, then use WASD to move and Mouse to look.</p>
-                         <p className="text-xs text-gray-500 mt-1">(Press 'Esc' to release mouse control)</p>
-                        </>
-                    ) : (
-                         <p className="text-gray-300 mt-2 text-sm md:text-base">Click & Drag to rotate. Click a planet to explore.</p>
-                    )}
-                 </motion.div>
-             </div>
-             {labels.map(label => (
-                 <motion.div
-                     key={label.id}
-                     className={`absolute p-2 text-xs bg-black/50 text-white rounded-md pointer-events-none ${!isSimulationMode ? 'cursor-pointer hover:ring-2 ring-purple-400' : ''}`}
-                     style={{ 
-                         left: label.x, 
-                         top: label.y,
-                         transform: 'translate(-50%, -150%)'
-                     }}
-                     initial={{ opacity: 0, scale: 0.5 }}
-                     animate={{ 
-                         opacity: isInteracting || label.isOccluded ? 0 : 1, 
-                         scale: isInteracting || label.isOccluded ? 0.5 : 1 
-                     }}
-                     transition={{ duration: 0.3 }}
-                 >
-                     {label.name}
-                 </motion.div>
-             ))}
-              <AnimatePresence>
-                {nearbyPlanet && isSimulationMode && !isInteracting && (
-                    <motion.div
-                        className="absolute bottom-1/4 left-1/2 -translate-x-1/2 p-4 text-lg bg-black/50 text-white rounded-lg pointer-events-none border border-white/20 backdrop-blur-sm"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ duration: 0.3 }}
+        <div className="w-full h-full relative">
+            <div ref={mountRef} className="w-full h-full absolute inset-0" />
+             <AnimatePresence>
+                {isInteracting && (
+                    <motion.div 
+                        className="absolute inset-0 bg-black/80 flex items-center justify-center"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
                     >
-                        Press <span className="font-bold text-purple-300 px-2 py-1 bg-white/10 rounded">E</span> to enter {nearbyPlanet.name}
                     </motion.div>
                 )}
             </AnimatePresence>
+
+             {/* UI Overlay */}
+            <div className="absolute inset-0 pointer-events-none">
+                <AnimatePresence>
+                    {viewMode === 'cards' && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="w-full h-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 overflow-y-auto pointer-events-auto"
+                        >
+                            {NAV_ITEMS.filter(i => i.view !== View.HOME).map((item, idx) => {
+                                const Icon = iconMap[item.view] || ChatIcon;
+                                return (
+                                    <motion.div
+                                        key={item.view}
+                                        className="bg-black/40 backdrop-blur-md rounded-xl border border-white/10 flex flex-col items-center justify-center p-4 text-center cursor-pointer hover:bg-purple-500/20 transition-colors"
+                                        onClick={() => setActiveView(item.view as View)}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                    >
+                                        <div className="p-3 bg-purple-500/10 rounded-full mb-3">
+                                            <Icon className="h-8 w-8 text-purple-300" />
+                                        </div>
+                                        <h3 className="font-bold">{item.label}</h3>
+                                        <p className="text-xs text-gray-400">{item.description}</p>
+                                    </motion.div>
+                                );
+                            })}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {viewMode !== 'cards' && labels.map(label => (
+                    !label.isOccluded && (
+                        <motion.div
+                            key={label.id}
+                            className="absolute bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded pointer-events-auto cursor-pointer"
+                            style={{
+                                left: label.x,
+                                top: label.y,
+                                transform: 'translate(-50%, -50%)'
+                            }}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3 }}
+                            onClick={() => setActiveView(label.id as View)}
+                        >
+                            {label.name}
+                        </motion.div>
+                    )
+                ))}
+                 {viewMode === 'simulation' && (
+                    <div className="absolute bottom-1/2 left-1/2 -translate-x-1/2 text-white text-2xl">+</div>
+                )}
+
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-md p-2 rounded-lg border border-white/10 pointer-events-auto">
+                    <button onClick={() => setViewMode('simulation')} className={`p-2 rounded-md transition-colors ${viewMode === 'simulation' ? 'bg-purple-600' : 'hover:bg-white/10'}`} title="First-Person View"><JoystickIcon /></button>
+                    <button onClick={() => setViewMode('orbit')} className={`p-2 rounded-md transition-colors ${viewMode === 'orbit' ? 'bg-purple-600' : 'hover:bg-white/10'}`} title="Orbit View"><OrbitIcon /></button>
+                    <button onClick={() => setViewMode('cards')} className={`p-2 rounded-md transition-colors ${viewMode === 'cards' ? 'bg-purple-600' : 'hover:bg-white/10'}`} title="Grid View"><GridIcon /></button>
+                </div>
+
+                <AnimatePresence>
+                {viewMode === 'simulation' && nearbyPlanet && (
+                    <motion.div
+                        className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg text-center"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                    >
+                        <p>Press <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">E</kbd> to enter</p>
+                        <p className="font-bold text-lg">{nearbyPlanet.name}</p>
+                    </motion.div>
+                )}
+                </AnimatePresence>
+
+                 <AnimatePresence>
+                {viewMode === 'simulation' && (
+                    <motion.div
+                        className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md p-4 rounded-lg border border-white/10 text-sm"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                    >
+                        <h3 className="font-bold">Controls</h3>
+                        <p><kbd className="px-1.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-800 rounded">W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> - Move</p>
+                        <p>Mouse - Look</p>
+                    </motion.div>
+                )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 };
-
-export default SolarSystem;

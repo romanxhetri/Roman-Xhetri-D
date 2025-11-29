@@ -15,6 +15,19 @@ const MediaCreationHub = lazy(() => import('./components/MediaCreationHub'));
 const CodeWizard = lazy(() => import('./components/CodeWizard'));
 const AetherCanvas = lazy(() => import('./components/AetherCanvas'));
 const DataOracle = lazy(() => import('./components/DataOracle'));
+const TripPlanner = lazy(() => import('./components/TripPlanner'));
+const StoryWeaver = lazy(() => import('./components/StoryWeaver'));
+const ProductPage = lazy(() => import('./components/ProductPage'));
+const LaptopsPage = lazy(() => import('./components/LaptopsPage'));
+const MobilesPage = lazy(() => import('./components/MobilesPage'));
+const DeviceTroubleshooter = lazy(() => import('./components/DeviceTroubleshooter'));
+const DreamWeaver = lazy(() => import('./components/DreamWeaver'));
+const CosmicComposer = lazy(() => import('./components/CosmicComposer'));
+const MythosEngine = lazy(() => import('./components/MythosEngine'));
+const TemporalInvestigator = lazy(() => import('./components/TemporalInvestigator'));
+const BioSymphony = lazy(() => import('./components/BioSymphony'));
+const EchoForge = lazy(() => import('./components/EchoForge'));
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
 
 
 const BACKGROUNDS = [
@@ -79,17 +92,43 @@ const App: React.FC = () => {
         return <AetherCanvas key={View.AETHER_CANVAS} />;
        case View.DATA_ORACLE:
         return <DataOracle key={View.DATA_ORACLE} />;
+      case View.TRIP_PLANNER:
+        return <TripPlanner key={View.TRIP_PLANNER} />;
+      case View.STORY_WEAVER:
+        return <StoryWeaver key={View.STORY_WEAVER} />;
+      case View.DREAM_WEAVER:
+        return <DreamWeaver key={View.DREAM_WEAVER} />;
+      case View.COSMIC_COMPOSER:
+        return <CosmicComposer key={View.COSMIC_COMPOSER} />;
+      case View.MYTHOS_ENGINE:
+        return <MythosEngine key={View.MYTHOS_ENGINE} />;
+      case View.TEMPORAL_INVESTIGATOR:
+        return <TemporalInvestigator key={View.TEMPORAL_INVESTIGATOR} />;
+      case View.BIO_SYMPHONY:
+        return <BioSymphony key={View.BIO_SYMPHONY} />;
+      case View.ECHO_FORGE:
+        return <EchoForge key={View.ECHO_FORGE} />;
+      case View.PRODUCT:
+        return <ProductPage key={View.PRODUCT} />;
+      case View.LAPTOPS:
+        return <LaptopsPage key={View.LAPTOPS} />;
+      case View.MOBILES:
+        return <MobilesPage key={View.MOBILES} />;
+      case View.DEVICE_TROUBLESHOOTER:
+        return <DeviceTroubleshooter key={View.DEVICE_TROUBLESHOOTER} />;
+      case View.ADMIN:
+        return <AdminPanel key={View.ADMIN} />;
       default:
         return <FeatureShowcase key={activeView} title={title} description={description} />;
     }
   };
 
   return (
-    <main className="h-screen w-screen overflow-hidden text-white font-sans font-orbitron bg-black relative">
+    <main className="min-h-screen w-screen overflow-x-hidden text-white font-sans font-orbitron bg-black relative">
       <AnimatePresence>
         <motion.div
           key={bgIndex}
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          className="fixed inset-0 w-full h-full bg-cover bg-center"
           style={{ 
             backgroundImage: `url(${BACKGROUNDS[bgIndex]})`,
             willChange: 'opacity, transform',
@@ -100,11 +139,11 @@ const App: React.FC = () => {
           transition={{ duration: 2, ease: 'easeInOut' }}
         />
       </AnimatePresence>
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="fixed inset-0 bg-black/50" />
 
-      <div className="relative z-10 flex flex-col h-full">
+      <div className="relative z-10 flex flex-col min-h-screen">
         <Header activeView={activeView} setActiveView={setActiveView} />
-        <div className="flex-grow container mx-auto px-2 sm:px-4 mt-24 flex justify-center h-[calc(100vh-6rem)]">
+        <div className="flex-grow container mx-auto px-2 sm:px-4 mt-20 md:mt-24 flex flex-col items-center pb-8">
            <Suspense fallback={<div className="flex justify-center items-center h-full"><LoadingSpinner /></div>}>
              <AnimatePresence mode="wait">
               {renderActiveView()}

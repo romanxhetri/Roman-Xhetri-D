@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { generateSpeech } from '../services/geminiService';
-import { LoadingSpinner, TtsIcon } from './Icons';
+import { generateCosmicComposition } from '../services/geminiService';
+import { LoadingSpinner, CosmicComposerIcon } from './Icons';
 
-// --- Audio Helper Functions (copied from LiveConversation) ---
+// --- Audio Helper Functions (copied from TextToSpeech) ---
 function decode(base64: string): Uint8Array {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -34,17 +34,8 @@ async function decodeAudioData(
 }
 // --- End Helper Functions ---
 
-const VOICES = [
-    { name: 'Zephyr', id: 'Zephyr' },
-    { name: 'Kore', id: 'Kore' },
-    { name: 'Puck', id: 'Puck' },
-    { name: 'Charon', id: 'Charon' },
-    { name: 'Fenrir', id: 'Fenrir' },
-];
-
-const TextToSpeech: React.FC = () => {
-    const [text, setText] = useState('Hello! I am SageX, your mystical guide in this AI universe. ✨');
-    const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id);
+const CosmicComposer: React.FC = () => {
+    const [prompt, setPrompt] = useState('An epic and adventurous orchestral piece for a fantasy battle.');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -52,9 +43,9 @@ const TextToSpeech: React.FC = () => {
     const audioContextRef = useRef<AudioContext | null>(null);
     const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
-    const handleGenerate = async () => {
-        if (!text.trim()) {
-            setError('Please enter some text to generate speech.');
+    const handleCompose = async () => {
+        if (!prompt.trim()) {
+            setError('Please provide a prompt to compose music.');
             return;
         }
         setIsLoading(true);
@@ -65,7 +56,7 @@ const TextToSpeech: React.FC = () => {
         }
 
         try {
-            const base64Audio = await generateSpeech(text, selectedVoice);
+            const base64Audio = await generateCosmicComposition(prompt);
             
             if (!audioContextRef.current) {
                 audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -74,8 +65,8 @@ const TextToSpeech: React.FC = () => {
             const buffer = await decodeAudioData(decode(base64Audio), audioContextRef.current, 24000, 1);
             setAudioBuffer(buffer);
         } catch (err) {
-            console.error('TTS Generation Error:', err);
-            setError('Failed to generate speech. The AI might be lost for words. Please try again.');
+            console.error('Cosmic Composer Error:', err);
+            setError('The cosmic symphony is out of tune. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -93,7 +84,6 @@ const TextToSpeech: React.FC = () => {
         source.connect(audioContextRef.current.destination);
         source.start(0);
         audioSourceRef.current = source;
-
     }, [audioBuffer]);
 
     return (
@@ -105,49 +95,31 @@ const TextToSpeech: React.FC = () => {
             transition={{ duration: 0.5, ease: 'backOut' }}
         >
             <div className="flex flex-col items-center text-center mb-6">
-                 <div className="p-4 bg-purple-500/20 rounded-full mb-4">
-                    <TtsIcon />
+                 <div className="p-4 bg-cyan-500/20 rounded-full mb-4">
+                    <CosmicComposerIcon className="h-10 w-10 text-cyan-300" />
                 </div>
-                <h1 className="text-2xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-indigo-400">AI Text-to-Speech</h1>
-                <p className="text-base md:text-lg text-gray-300">Transform your text into lifelike speech with a variety of AI voices.</p>
+                <h1 className="text-2xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-sky-400">Cosmic Composer</h1>
+                <p className="text-base md:text-lg text-gray-300">Describe a mood or a scene, and let the AI create a unique soundscape for you.</p>
             </div>
             
             <div className="flex-grow flex flex-col gap-4">
                 <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Enter text here..."
-                    className="w-full flex-grow bg-black/20 rounded-lg p-4 border border-white/10 focus:ring-2 focus:ring-purple-500 focus:outline-none resize-none text-white"
-                    rows={8}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="e.g., 'A serene, ambient track for stargazing'"
+                    className="w-full flex-grow bg-black/20 rounded-lg p-4 border border-white/10 focus:ring-2 focus:ring-cyan-500 focus:outline-none resize-none text-white"
+                    rows={5}
                     disabled={isLoading}
                 />
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                    <div className="w-full sm:w-1/2">
-                         <label htmlFor="voice-select" className="block text-sm font-medium text-gray-300 mb-1">Select a Voice</label>
-                         <select
-                            id="voice-select"
-                            value={selectedVoice}
-                            onChange={(e) => setSelectedVoice(e.target.value)}
-                            disabled={isLoading}
-                            className="w-full bg-gray-900/50 border border-white/10 rounded-lg p-2.5 text-white focus:ring-purple-500 focus:border-purple-500"
-                        >
-                            {VOICES.map(voice => (
-                                <option key={voice.id} value={voice.id}>{voice.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="w-full sm:w-1/2 flex items-end h-full">
-                        <motion.button
-                            onClick={handleGenerate}
-                            disabled={isLoading}
-                            className="w-full px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[150px]"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            {isLoading ? <LoadingSpinner /> : 'Generate Speech'}
-                        </motion.button>
-                    </div>
-                </div>
+                <motion.button
+                    onClick={handleCompose}
+                    disabled={isLoading || !prompt.trim()}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-sky-600 rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[150px]"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
+                >
+                    {isLoading ? <LoadingSpinner /> : 'Compose'}
+                </motion.button>
             </div>
 
             <div className="mt-6 text-center h-16 flex items-center justify-center">
@@ -160,7 +132,7 @@ const TextToSpeech: React.FC = () => {
                          whileTap={{ scale: 0.98 }}
                     >
                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
-                        Play Generated Audio
+                        Play Composition
                     </motion.button>
                 )}
             </div>
@@ -168,4 +140,4 @@ const TextToSpeech: React.FC = () => {
     );
 };
 
-export default TextToSpeech;
+export default CosmicComposer;
