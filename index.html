@@ -3,18 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>SageX AI Universe</title>
-    <script>
-      // Polyfill for 'process' to prevent runtime errors in production builds
-      // We also inject the API Key here as a failsafe for runtime access
-      window.process = { 
-        env: { 
-          NODE_ENV: 'production',
-          API_KEY: 'AIzaSyCOycJFafEhEOxjSVIMgTe59BLRyJov9lA'
-        } 
-      };
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       body {
@@ -25,6 +15,15 @@
       }
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
     </style>
+    <script>
+      // Global polyfill to prevent "process is not defined" errors in production
+      window.process = {
+        env: {
+          NODE_ENV: 'production',
+          API_KEY: 'AIzaSyCOycJFafEhEOxjSVIMgTe59BLRyJov9lA'
+        }
+      };
+    </script>
 <script type="importmap">
 {
   "imports": {

@@ -1,9 +1,28 @@
 import { GoogleGenAI, GenerateContentResponse, Modality, Type, FunctionDeclaration, Chat } from "@google/genai";
 import { Message, FileChange } from '../types';
 
-// The API_KEY is injected by Vite at build time via 'define'.
-// We trust it is present because of the fallback in vite.config.ts.
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Hardcoded fallback key to ensure the app works in production environments where env vars might be missing.
+const FALLBACK_KEY = 'AIzaSyCOycJFafEhEOxjSVIMgTe59BLRyJov9lA';
+
+// Robustly retrieve the API Key. 
+// 1. Try process.env (Vite injection)
+// 2. Try window.process.env (index.html polyfill)
+// 3. Use the hardcoded fallback.
+const getApiKey = (): string => {
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        return process.env.API_KEY;
+    }
+    if (typeof window !== 'undefined' && (window as any).process?.env?.API_KEY) {
+        return (window as any).process.env.API_KEY;
+    }
+    return FALLBACK_KEY;
+};
+
+export const API_KEY = getApiKey();
+
+console.log("SageX AI Service Initialized. Key status:", API_KEY ? "Present" : "Missing");
+
+const getAI = () => new GoogleGenAI({ apiKey: API_KEY });
 
 const formatHistory = (history: Message[]) => {
   return history.map(msg => ({
@@ -111,7 +130,7 @@ export const editImageWithPrompt = async (base64ImageData: string, mimeType: str
 
 export const generateVideoFromPrompt = async (prompt: string, aspectRatio: '16:9' | '9:16', onPoll?: (op: any) => void): Promise<string> => {
     // A new instance is created here to ensure the latest API key from the dialog is used.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
     let operation = await ai.models.generateVideos({
         model: 'veo-3.1-fast-generate-preview',
         prompt,
@@ -133,7 +152,7 @@ export const generateVideoFromPrompt = async (prompt: string, aspectRatio: '16:9
         throw new Error("Video generation completed but no download link was found.");
     }
     
-    const videoResponse = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    const videoResponse = await fetch(`${downloadLink}&key=${API_KEY}`);
     const blob = await videoResponse.blob();
     return URL.createObjectURL(blob);
 };

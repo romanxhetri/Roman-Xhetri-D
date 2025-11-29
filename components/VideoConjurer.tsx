@@ -22,11 +22,8 @@ const VideoConjurer: React.FC = () => {
     const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
 
     const checkApiKey = async () => {
-        if (window.aistudio && await window.aistudio.hasSelectedApiKey()) {
-            setGenerationState('IDLE');
-        } else {
-            setGenerationState('NEEDS_KEY');
-        }
+        // Since we have a hardcoded key for this deployment, we can bypass the check
+        setGenerationState('IDLE'); 
     };
     
     useEffect(() => {
@@ -76,10 +73,10 @@ const VideoConjurer: React.FC = () => {
     };
 
     const handleSelectKey = async () => {
-        await window.aistudio.openSelectKey();
-        // Assume key selection is successful and let the user proceed.
-        // The API call will fail if the key is bad, and we can handle that.
-        setGenerationState('IDLE');
+        if (window.aistudio) {
+            await window.aistudio.openSelectKey();
+            setGenerationState('IDLE');
+        }
     };
 
     const resetState = () => {
