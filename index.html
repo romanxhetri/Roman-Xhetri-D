@@ -7,7 +7,13 @@
     <title>SageX AI Universe</title>
     <script>
       // Polyfill for 'process' to prevent runtime errors in production builds
-      window.process = { env: { NODE_ENV: 'production' } };
+      // We also inject the API key here as a fallback for any libraries that might check process.env
+      window.process = { 
+        env: { 
+          NODE_ENV: 'production',
+          API_KEY: 'AIzaSyCOycJFafEhEOxjSVIMgTe59BLRyJov9lA' 
+        } 
+      };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>

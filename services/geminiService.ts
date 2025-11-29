@@ -1,9 +1,15 @@
+
+
 import { GoogleGenAI, GenerateContentResponse, Modality, Type, FunctionDeclaration, Chat } from "@google/genai";
 import { Message, FileChange } from '../types';
 
-// The API_KEY is injected by Vite at build time via 'define'.
-// We trust it is present because of the fallback in vite.config.ts.
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Hardcoded API Key to ensure functionality in production deployments
+export const API_KEY = 'AIzaSyCOycJFafEhEOxjSVIMgTe59BLRyJov9lA';
+
+// Log initialization to help debug in production console
+console.log(`SageX AI Service Initialized. Key available: ${!!API_KEY}`);
+
+const getAI = () => new GoogleGenAI({ apiKey: API_KEY });
 
 const formatHistory = (history: Message[]) => {
   return history.map(msg => ({
@@ -110,8 +116,7 @@ export const editImageWithPrompt = async (base64ImageData: string, mimeType: str
 };
 
 export const generateVideoFromPrompt = async (prompt: string, aspectRatio: '16:9' | '9:16', onPoll?: (op: any) => void): Promise<string> => {
-    // A new instance is created here to ensure the latest API key from the dialog is used.
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
     let operation = await ai.models.generateVideos({
         model: 'veo-3.1-fast-generate-preview',
         prompt,
@@ -133,7 +138,7 @@ export const generateVideoFromPrompt = async (prompt: string, aspectRatio: '16:9
         throw new Error("Video generation completed but no download link was found.");
     }
     
-    const videoResponse = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    const videoResponse = await fetch(`${downloadLink}&key=${API_KEY}`);
     const blob = await videoResponse.blob();
     return URL.createObjectURL(blob);
 };
@@ -418,7 +423,6 @@ ${content}
     }
 };
 
-// FIX: Added missing getProactiveHint function.
 export const getProactiveHint = async (context: { currentView: string; activityLog: any[] }): Promise<{ hint_text: string; target_view: string }> => {
     const ai = getAI();
 
@@ -518,79 +522,20 @@ export const getLaptopChatResponse = async (
     const formattedHistory = formatHistory(history);
     const contents = [...formattedHistory, { role: 'user', parts: [{ text: newMessage }] }];
 
-    const productListText = laptopList.map(p => `- ${p.name} (ID: ${p.id}, Price: $${p.price}, Specs: ${p.specs.cpu}, ${p.specs.gpu}, ${p.specs.ram} RAM, ${p.specs.storage} Storage)`).join('\n');
+    const productListText = laptopList.map(p => `- ${p.name} (ID: ${p.id}, Price: $${p.price}, Specs: ${p.specs.cpu}, ${p.specs.gpu}, ${p.specs.ram} RAM`).join('\n');
 
     const config = {
-        systemInstruction: `You are SageX, a knowledgeable and helpful AI tech expert in a high-end laptop store. Your main goal is to help users understand the products and find the perfect laptop for their needs.
-- Your tone is professional, clear, and tech-savvy, but still friendly and approachable.
-- You have deep knowledge of computer hardware. Explain specs like CPU, GPU, and RAM in simple terms if needed.
-- When a user asks for a recommendation, analyze their needs and suggest the best fit from the product list.
-- Use emojis like 💻, 🚀, 💡, 🎮 to keep the conversation engaging.
-
-Here is the current list of available laptops:
-${productListText}`,
+        systemInstruction: `You are a knowledgeable tech sales assistant for high-end laptops.
+        Current Inventory:
+        ${productListText}
+        Help the user pick the right laptop.`,
     };
-
-    const response = await ai.models.generateContent({
+     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: contents,
         config: config,
     });
     return response;
-};
-
-export const getLaptopRecommendation = async (
-    userNeeds: string,
-    laptopList: any[]
-): Promise<{ recommendedLaptopId: string; reasoning: string }> => {
-    const ai = getAI();
-
-    const productListText = JSON.stringify(laptopList.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        specs: p.specs
-    })));
-
-    const prompt = `
-A customer is looking for a new laptop. Here's what they need: "${userNeeds}"
-
-Here is the list of available laptops in JSON format:
-${productListText}
-
-Analyze the customer's needs and the specs of each laptop. Choose the single best laptop for the customer and provide a brief, compelling reason for your choice.
-`;
-
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    recommendedLaptopId: {
-                        type: Type.STRING,
-                        description: 'The ID of the single best laptop for the customer.'
-                    },
-                    reasoning: {
-                        type: Type.STRING,
-                        description: 'A concise, user-friendly explanation for why this laptop was recommended.'
-                    }
-                },
-                required: ['recommendedLaptopId', 'reasoning']
-            }
-        }
-    });
-    
-    try {
-        const jsonText = response.text.trim();
-        const cleanedJson = jsonText.replace(/^```json\n/, '').replace(/\n```$/, '');
-        return JSON.parse(cleanedJson);
-    } catch (e) {
-        console.error("Failed to parse JSON for laptop recommendation:", response.text);
-        throw new Error("The AI returned an invalid recommendation. Please try again.");
-    }
 };
 
 export const getMobileChatResponse = async (
@@ -602,20 +547,15 @@ export const getMobileChatResponse = async (
     const formattedHistory = formatHistory(history);
     const contents = [...formattedHistory, { role: 'user', parts: [{ text: newMessage }] }];
 
-    const productListText = mobileList.map(p => `- ${p.name} (ID: ${p.id}, Price: $${p.price}, Specs: ${p.specs.cpu}, ${p.specs.ram} RAM, ${p.specs.storage} Storage, ${p.specs.camera} Camera)`).join('\n');
+    const productListText = mobileList.map(p => `- ${p.name} (ID: ${p.id}, Price: $${p.price}, Specs: ${p.specs.cpu}, ${p.specs.camera}, ${p.specs.ram} RAM`).join('\n');
 
     const config = {
-        systemInstruction: `You are SageX, a knowledgeable and helpful AI tech expert in a futuristic mobile phone store. Your main goal is to help users understand the products and find the perfect mobile for their needs.
-- Your tone is professional, clear, and tech-savvy, but still friendly and approachable.
-- You have deep knowledge of mobile hardware. Explain specs like CPU, RAM, and Camera in simple terms if needed.
-- When a user asks for a recommendation, analyze their needs and suggest the best fit from the product list.
-- Use emojis like 📱, 🚀, 💡, 📸 to keep the conversation engaging.
-
-Here is the current list of available mobile phones:
-${productListText}`,
+        systemInstruction: `You are a knowledgeable tech sales assistant for mobile phones.
+        Current Inventory:
+        ${productListText}
+        Help the user pick the right phone.`,
     };
-
-    const response = await ai.models.generateContent({
+     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: contents,
         config: config,
@@ -623,27 +563,18 @@ ${productListText}`,
     return response;
 };
 
-export const getMobileRecommendation = async (
-    userNeeds: string,
-    mobileList: any[]
-): Promise<{ recommendedMobileId: string; reasoning: string }> => {
+export const getLaptopRecommendation = async (userNeeds: string, laptopList: any[]): Promise<{ recommendedLaptopId: string; reasoning: string }> => {
     const ai = getAI();
-
-    const productListText = JSON.stringify(mobileList.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        specs: p.specs
-    })));
+    const productListText = laptopList.map(p => `- ${p.name} (ID: ${p.id}, Price: $${p.price}, Specs: ${JSON.stringify(p.specs)})`).join('\n');
 
     const prompt = `
-A customer is looking for a new mobile phone. Here's what they need: "${userNeeds}"
+        User needs: "${userNeeds}"
+        Available Laptops:
+        ${productListText}
 
-Here is the list of available mobile phones in JSON format:
-${productListText}
-
-Analyze the customer's needs and the specs of each phone. Choose the single best mobile phone for the customer and provide a brief, compelling reason for your choice.
-`;
+        Select the best laptop from the list that matches the user's needs.
+        Respond ONLY with a JSON object: { "recommendedLaptopId": "id", "reasoning": "brief explanation" }
+    `;
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -651,49 +582,60 @@ Analyze the customer's needs and the specs of each phone. Choose the single best
         config: {
             responseMimeType: 'application/json',
             responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    recommendedMobileId: {
-                        type: Type.STRING,
-                        description: 'The ID of the single best mobile phone for the customer.'
-                    },
-                    reasoning: {
-                        type: Type.STRING,
-                        description: 'A concise, user-friendly explanation for why this mobile phone was recommended.'
-                    }
-                },
-                required: ['recommendedMobileId', 'reasoning']
+                 type: Type.OBJECT,
+                 properties: {
+                     recommendedLaptopId: { type: Type.STRING },
+                     reasoning: { type: Type.STRING }
+                 },
+                 required: ['recommendedLaptopId', 'reasoning']
             }
         }
     });
-    
-    try {
-        const jsonText = response.text.trim();
-        const cleanedJson = jsonText.replace(/^```json\n/, '').replace(/\n```$/, '');
-        return JSON.parse(cleanedJson);
-    } catch (e) {
-        console.error("Failed to parse JSON for mobile recommendation:", response.text);
-        throw new Error("The AI returned an invalid recommendation. Please try again.");
-    }
+
+    return JSON.parse(response.text);
 };
 
-export const getTroubleshootingResponse = async (history: Message[], userProblem: string): Promise<GenerateContentResponse> => {
+export const getMobileRecommendation = async (userNeeds: string, mobileList: any[]): Promise<{ recommendedMobileId: string; reasoning: string }> => {
     const ai = getAI();
-    const formattedHistory = formatHistory(history);
-    const contents = [...formattedHistory, { role: 'user', parts: [{ text: userProblem }] }];
-    
-    const config = {
-        systemInstruction: `You are an expert and patient AI troubleshooting assistant named 'Chip'. Your goal is to help users solve technical problems with their devices (like laptops, mobile phones, etc.) in a clear, friendly, and effective manner.
-- Your tone should be calming, reassuring, and professional.
-- ALWAYS ask clarifying questions first if the user's problem is vague.
-- Provide solutions as a numbered list of step-by-step instructions.
-- Start with the simplest solutions first (e.g., "Have you tried turning it off and on again?") before moving to more complex ones.
-- Explain technical terms simply.
-- Use emojis like 🔧, 💡, ✅ to make the steps clear and friendly.
-- End your response by asking if the proposed solution worked, and what the user would like to try next if it didn't.`,
-    };
+    const productListText = mobileList.map(p => `- ${p.name} (ID: ${p.id}, Price: $${p.price}, Specs: ${JSON.stringify(p.specs)})`).join('\n');
+
+    const prompt = `
+        User needs: "${userNeeds}"
+        Available Mobiles:
+        ${productListText}
+
+        Select the best mobile from the list that matches the user's needs.
+        Respond ONLY with a JSON object: { "recommendedMobileId": "id", "reasoning": "brief explanation" }
+    `;
 
     const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+                 type: Type.OBJECT,
+                 properties: {
+                     recommendedMobileId: { type: Type.STRING },
+                     reasoning: { type: Type.STRING }
+                 },
+                 required: ['recommendedMobileId', 'reasoning']
+            }
+        }
+    });
+
+    return JSON.parse(response.text);
+};
+
+export const getTroubleshootingResponse = async (history: Message[], newMessage: string): Promise<GenerateContentResponse> => {
+     const ai = getAI();
+    const formattedHistory = formatHistory(history);
+    const contents = [...formattedHistory, { role: 'user', parts: [{ text: newMessage }] }];
+
+    const config = {
+        systemInstruction: `You are Chip, a friendly and expert technical support AI. Help the user troubleshoot their device issues. Ask clarifying questions if needed. Provide step-by-step solutions.`,
+    };
+     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: contents,
         config: config,
@@ -701,69 +643,54 @@ export const getTroubleshootingResponse = async (history: Message[], userProblem
     return response;
 };
 
-
 export const getAISearchResponse = async (query: string, location: GeolocationCoordinates | null): Promise<GenerateContentResponse> => {
-  const ai = getAI();
+     const ai = getAI();
+     const config: any = {
+        tools: [{googleSearch: {}}, {googleMaps: {}}],
+    };
+    if (location) {
+        config.toolConfig = {
+            retrievalConfig: {
+                latLng: {
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                }
+            }
+        };
+    }
 
-  const config: any = {
-      tools: [{ googleSearch: {} }, { googleMaps: {} }],
-  };
-
-  if (location) {
-      config.toolConfig = {
-          retrievalConfig: {
-              latLng: {
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-              }
-          }
-      };
-  }
-
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: query,
-    ...config,
-  });
-
-  return response;
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: query,
+        config: config,
+    });
+    return response;
 };
 
 export const getTripPlan = async (prompt: string, location: GeolocationCoordinates | null): Promise<GenerateContentResponse> => {
-  const ai = getAI();
+    const ai = getAI();
+    const config: any = {
+        systemInstruction: "You are a world-class travel agent. Create a detailed, day-by-day itinerary based on the user's request. Include hotels, restaurants, and activities. Use Google Search and Maps to find real, highly-rated places.",
+        tools: [{googleSearch: {}}, {googleMaps: {}}],
+    };
 
-  const config: any = {
-      systemInstruction: `You are a world-class AI travel agent. Your goal is to create a detailed, exciting, and practical travel itinerary based on the user's request.
-- Use markdown to structure the response clearly with headings for each day, bullet points for activities, and bold text for key locations.
-- Include a mix of popular attractions and hidden gems.
-- Suggest types of restaurants or specific dishes to try.
-- Leverage your access to Google Search for the most up-to-date information and Google Maps to provide links to locations.
-- Your tone should be enthusiastic and inspiring. Add an emoji or two to make it fun! 🏖️`,
-      tools: [{ googleSearch: {} }, { googleMaps: {} }],
-  };
-  
-  if (location) {
-      config.toolConfig = {
-          retrievalConfig: {
-              latLng: {
-                  latitude: location.latitude,
-                  longitude: location.longitude,
-              }
-          }
-      };
-  }
+    if (location) {
+        config.toolConfig = {
+            retrievalConfig: {
+                latLng: {
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                }
+            }
+        };
+    }
 
-  const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: config,
-  });
-
-  return response;
-};
-
-export const getStoryStream = async (chat: Chat, newPrompt: string) => {
-    return await chat.sendMessageStream({ message: newPrompt });
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: config,
+    });
+    return response;
 };
 
 export const createStoryChat = (): Chat => {
@@ -771,86 +698,64 @@ export const createStoryChat = (): Chat => {
     return ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
-            systemInstruction: `You are a master storyteller. Continue the narrative based on the user's prompt and the existing story.
-- Your tone should be captivating and immersive.
-- Weave detailed descriptions and compelling dialogue.
-- End each segment on a point that makes the user want to know what happens next.
-- Do not repeat yourself or the user's prompt. Just continue the story.`,
-        },
+            systemInstruction: "You are a master storyteller. Collaborate with the user to write a story. You can write a paragraph, then let the user write one, or simply continue the story based on their prompts. Be creative and descriptive.",
+        }
     });
 };
 
-
-export const getDataAnalysisResponse = async (csvData: string, prompt: string): Promise<GenerateContentResponse> => {
-    const ai = getAI();
-
-    const fullPrompt = `
-Analyze the following dataset in CSV format and answer the user's question.
-
---- CSV DATA START ---
-${csvData}
---- CSV DATA END ---
-
-User's question: "${prompt}"
-
-Provide a clear and concise answer based on the data. If the question is open-ended (e.g., "what can you tell me about this data?"), provide a brief summary including column headers, number of rows, and any obvious patterns you see.
-`;
-
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: fullPrompt,
-        config: {
-            systemInstruction: `You are a world-class data analyst AI called the 'Data Oracle'. Your task is to analyze the provided CSV data and answer the user's questions with insightful and accurate information.
-- Be direct and to the point.
-- Format your response using clear markdown.
-- When you suggest a chart, be specific about the data points to use for the axes or segments.`,
-        },
-    });
-
-    return response;
-};
+export const getStoryStream = async (chat: Chat, prompt: string) => {
+    const result = await chat.sendMessageStream({ message: prompt });
+    return result;
+}
 
 export const createMythosChat = (): Chat => {
     const ai = getAI();
     return ai.chats.create({
         model: 'gemini-2.5-flash',
         config: {
-            systemInstruction: `You are the Mythos Engine, a master storyteller and Dungeon Master for a text-based RPG.
-- Your goal is to create a dynamic, engaging, and challenging adventure.
-- You MUST track the player's state: Health Points (HP), Attack Power (AP), and Inventory. The player starts with 100 HP, 10 AP, and an empty inventory.
-- Every single response you provide MUST be a JSON object adhering to the schema.
-- NEVER respond with anything other than this JSON structure. Do not add markdown like \`\`\`json.
-- The story must react to the user's choices. If they fight, describe the combat. If they explore, describe what they find.
-- When the user gets a new item, add it to the inventory. When their stats change, update the hp/ap values.
-- If the game is over, the story should reflect the final outcome (victory or defeat).`,
             responseMimeType: 'application/json',
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
-                    story: {
-                        type: Type.STRING,
-                        description: "The next part of the adventure narrative. Be descriptive, engaging, and about 2-4 sentences long."
-                    },
+                    story: { type: Type.STRING, description: "The narrative description of what happens next." },
                     character: {
                         type: Type.OBJECT,
                         properties: {
-                            hp: { type: Type.INTEGER, description: "Player's current health points." },
-                            ap: { type: Type.INTEGER, description: "Player's current attack power." },
-                            inventory: {
-                                type: Type.ARRAY,
-                                items: { type: Type.STRING },
-                                description: "List of items the player is carrying."
-                            }
-                        },
-                        required: ["hp", "ap", "inventory"]
+                            hp: { type: Type.INTEGER },
+                            ap: { type: Type.INTEGER },
+                            inventory: { type: Type.ARRAY, items: { type: Type.STRING } }
+                        }
                     },
-                    gameOver: {
-                        type: Type.BOOLEAN,
-                        description: "True if the player's HP is 0 or they have won, otherwise false."
-                    }
-                },
-                required: ["story", "character", "gameOver"]
-            }
-        },
+                    gameOver: { type: Type.BOOLEAN }
+                }
+            },
+            systemInstruction: `You are the Mythos Engine, an AI Dungeon Master. Run a text-based RPG.
+            - Track the user's HP (starts at 100), AP (starts at 10), and Inventory.
+            - Update the state based on the user's actions.
+            - If HP reaches 0, gameOver is true.
+            - Respond in JSON format with the 'story', 'character' state, and 'gameOver' status.`,
+        }
     });
+}
+
+export const getDataAnalysisResponse = async (csvData: string, query: string): Promise<GenerateContentResponse> => {
+    const ai = getAI();
+    const prompt = `
+        Here is a dataset in CSV format:
+        \`\`\`csv
+        ${csvData.slice(0, 10000)} 
+        \`\`\`
+        (Note: Data might be truncated if too large)
+
+        User Question: "${query}"
+
+        Analyze the data to answer the user's question. Provide insights, trends, or specific values. 
+        Format the response with Markdown tables or lists if appropriate.
+    `;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+    });
+    return response;
 };

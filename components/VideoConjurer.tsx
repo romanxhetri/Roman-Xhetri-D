@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateVideoFromPrompt } from '../services/geminiService';
@@ -18,23 +19,10 @@ const VideoConjurer: React.FC = () => {
     const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [generationState, setGenerationState] = useState<GenerationState>('CHECKING_KEY');
+    const [generationState, setGenerationState] = useState<GenerationState>('IDLE');
     const [loadingMessage, setLoadingMessage] = useState(LOADING_MESSAGES[0]);
 
-    const checkApiKey = async () => {
-        if (window.aistudio && await window.aistudio.hasSelectedApiKey()) {
-            setGenerationState('IDLE');
-        } else {
-            setGenerationState('NEEDS_KEY');
-        }
-    };
-    
     useEffect(() => {
-        checkApiKey();
-    }, []);
-
-    useEffect(() => {
-        // FIX: Use ReturnType<typeof setInterval> for browser compatibility instead of NodeJS.Timeout
         let interval: ReturnType<typeof setInterval>;
         if (generationState === 'GENERATING') {
             interval = setInterval(() => {
@@ -65,21 +53,15 @@ const VideoConjurer: React.FC = () => {
             setGenerationState('SUCCESS');
         } catch (err: any) {
              console.error('Video generation error:', err);
+             // Since we use the hardcoded key now, "Requested entity was not found" means a generic API error or key issue, not necessarily missing selection.
              if (err.message && err.message.includes("Requested entity was not found.")) {
-                setError('Your API key seems to be invalid. Please select a new one.');
-                setGenerationState('NEEDS_KEY');
+                setError('The video spell failed. Please try again later.');
+                setGenerationState('ERROR');
              } else {
                 setError('The spell fizzled! Something went wrong during generation.');
                 setGenerationState('ERROR');
              }
         }
-    };
-
-    const handleSelectKey = async () => {
-        await window.aistudio.openSelectKey();
-        // Assume key selection is successful and let the user proceed.
-        // The API call will fail if the key is bad, and we can handle that.
-        setGenerationState('IDLE');
     };
 
     const resetState = () => {
@@ -94,25 +76,6 @@ const VideoConjurer: React.FC = () => {
             case 'CHECKING_KEY':
                 return <div className="flex flex-col items-center justify-center h-full"><LoadingSpinner /><p className="mt-2">Checking magical credentials...</p></div>
             
-            case 'NEEDS_KEY':
-                return (
-                    <div className="text-center flex flex-col items-center justify-center h-full">
-                        <h2 className="text-xl md:text-2xl font-bold mb-4">API Key Required for Veo</h2>
-                        <p className="max-w-md mb-6 text-gray-300">The Video Conjurer uses a powerful spell (the Veo model) that requires you to select an API key. Please note that usage may incur charges.</p>
-                        <motion.button
-                            onClick={handleSelectKey}
-                            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow-lg"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            Select API Key
-                        </motion.button>
-                        <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-sm text-purple-300 hover:underline mt-4">
-                            Learn more about billing
-                        </a>
-                         {error && <p className="text-red-400 mt-4">{error}</p>}
-                    </div>
-                );
-
             case 'GENERATING':
                 return (
                     <div className="text-center flex flex-col items-center justify-center h-full">
@@ -140,6 +103,7 @@ const VideoConjurer: React.FC = () => {
             
             case 'IDLE':
             case 'ERROR':
+            case 'NEEDS_KEY':
                 return (
                     <div className="flex flex-col h-full w-full max-w-2xl mx-auto">
                         <div className="flex-grow flex flex-col">
