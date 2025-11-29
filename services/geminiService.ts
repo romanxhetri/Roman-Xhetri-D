@@ -62,7 +62,7 @@ The available views are: 'home', 'product', 'pricing', 'blog', 'facebook', 'chat
   }
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro',
+    model: 'gemini-2.5-flash',
     contents: contents,
     config: config,
   });
@@ -179,7 +179,7 @@ ${content}
     `;
     
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
     });
     return response;
@@ -195,7 +195,7 @@ export const generateComponentCode = async (prompt: string): Promise<{ html: str
         - The entire response MUST be a JSON object.
     `;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-3-pro-preview',
         contents: fullPrompt,
         config: {
             responseMimeType: 'application/json',
@@ -282,7 +282,7 @@ export const interpretAndVisualizeDream = async (dreamDescription: string): Prom
         { "interpretation": "Your interpretation of the dream.", "image_prompt": "Your detailed prompt for the image generator." }
     `;
     const interpretationResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: interpretationPrompt,
         config: {
             responseMimeType: 'application/json',
@@ -315,7 +315,7 @@ export const generateAnomaly = async (): Promise<{ case_file: string; image_prom
         { "case_file": "A brief, intriguing description of the temporal anomaly.", "image_prompt": "A detailed, atmospheric prompt for an image generator, focusing on the historical setting and the paradoxical element." }
     `;
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             responseMimeType: 'application/json',
@@ -333,7 +333,7 @@ export const generateAnomaly = async (): Promise<{ case_file: string; image_prom
 export const createAnomalyChat = (): Chat => {
     const ai = getAI();
     return ai.chats.create({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         config: {
             systemInstruction: `You are A.R.I.A. (Archival Retrieval & Intelligence Assistant), the AI partner for a Temporal Investigator. Your tone is professional, calm, and slightly futuristic. The user is an agent trying to solve a historical paradox you've presented. You have access to the "entire historical record." Answer user questions based on established history, but also hint at the paradoxical elements. Your goal is to guide the user to identify the specific object or event that doesn't belong. Keep responses concise and analytical.`,
         },
@@ -346,7 +346,7 @@ export const createBioSymphony = async (base64ImageData: string, mimeType: strin
     const generationPrompt = `Analyze the person's facial expression in this image. Based on the perceived emotion, do two things: 1. Write a short, four-line poem that captures this emotion. 2. Create a detailed, artistic prompt for an AI image generator to create an abstract, beautiful visualization of this emotion. The style should be ethereal and symbolic. Combine these into a single JSON object. Respond ONLY with the JSON object.`;
     
     const interpretationResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: { parts: [imagePart, { text: generationPrompt }] },
         config: {
             responseMimeType: 'application/json',
@@ -371,7 +371,7 @@ export const generateAvatar = async (prompt: string): Promise<string> => {
 
 export const createPersonaChat = (systemInstruction: string): Chat => {
     const ai = getAI();
-    return ai.chats.create({ model: 'gemini-2.5-pro', config: { systemInstruction } });
+    return ai.chats.create({ model: 'gemini-2.5-flash', config: { systemInstruction } });
 };
 
 export const generateProjectModifications = async (request: string, files: Record<string, string>, systemInstruction?: string): Promise<FileChange[]> => {
@@ -393,7 +393,7 @@ ${content}
     `;
     
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -450,7 +450,7 @@ export const getProactiveHint = async (context: { currentView: string; activityL
     `;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             responseMimeType: 'application/json',
@@ -506,7 +506,7 @@ ${productListText}`,
     };
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: contents,
         config: config,
     });
@@ -536,7 +536,7 @@ ${productListText}`,
     };
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: contents,
         config: config,
     });
@@ -566,7 +566,7 @@ Analyze the customer's needs and the specs of each laptop. Choose the single bes
 `;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             responseMimeType: 'application/json',
@@ -620,7 +620,7 @@ ${productListText}`,
     };
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: contents,
         config: config,
     });
@@ -650,7 +650,7 @@ Analyze the customer's needs and the specs of each phone. Choose the single best
 `;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             responseMimeType: 'application/json',
@@ -698,7 +698,7 @@ export const getTroubleshootingResponse = async (history: Message[], userProblem
     };
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: contents,
         config: config,
     });
@@ -773,7 +773,7 @@ export const getStoryStream = async (chat: Chat, newPrompt: string) => {
 export const createStoryChat = (): Chat => {
     const ai = getAI();
     return ai.chats.create({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         config: {
             systemInstruction: `You are a master storyteller. Continue the narrative based on the user's prompt and the existing story.
 - Your tone should be captivating and immersive.
@@ -801,7 +801,7 @@ Provide a clear and concise answer based on the data. If the question is open-en
 `;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         contents: fullPrompt,
         config: {
             systemInstruction: `You are a world-class data analyst AI called the 'Data Oracle'. Your task is to analyze the provided CSV data and answer the user's questions with insightful and accurate information.
@@ -817,7 +817,7 @@ Provide a clear and concise answer based on the data. If the question is open-en
 export const createMythosChat = (): Chat => {
     const ai = getAI();
     return ai.chats.create({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         config: {
             systemInstruction: `You are the Mythos Engine, a master storyteller and Dungeon Master for a text-based RPG.
 - Your goal is to create a dynamic, engaging, and challenging adventure.
