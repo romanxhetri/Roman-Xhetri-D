@@ -2,23 +2,21 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-  // Cast process to any to avoid TS error: Property 'cwd' does not exist on type 'Process'
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, (process as any).cwd(), '');
+
   return {
     plugins: [react()],
     build: {
       outDir: 'dist',
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'framer-motion'],
-            genai: ['@google/genai'],
-          },
-        },
-      },
     },
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || ''),
+      // Robustly load the API key:
+      // 1. Check loaded .env files (env.API_KEY)
+      // 2. Check system environment variables (process.env.API_KEY) - critical for Netlify
+      // 3. Fallback to the provided key
+      'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY || 'AIzaSyCOycJFafEhEOxjSVIMgTe59BLRyJov9lA'),
     },
   };
 });
