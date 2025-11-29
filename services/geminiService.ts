@@ -1,12 +1,8 @@
 import { GoogleGenAI, GenerateContentResponse, Modality, Type, FunctionDeclaration, Chat } from "@google/genai";
 import { Message, FileChange } from '../types';
 
-if (!process.env.API_KEY) {
-  // This is a placeholder check. In a real environment, the key would be set.
-  // We'll proceed assuming it's available, per instructions.
-  console.warn("API_KEY environment variable not set. Using a placeholder.");
-}
-
+// The API_KEY is injected by Vite at build time via 'define'.
+// We trust it is present because of the fallback in vite.config.ts.
 const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 const formatHistory = (history: Message[]) => {
