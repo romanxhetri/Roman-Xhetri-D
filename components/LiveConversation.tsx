@@ -1,9 +1,7 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from "@google/genai";
 import { LoadingSpinner, MicIcon } from './Icons';
-import { API_KEY } from '../services/geminiService';
 
 // --- Audio Helper Functions ---
 function encode(bytes: Uint8Array): string {
@@ -154,8 +152,7 @@ const LiveConversation: React.FC = () => {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaStreamRef.current = stream;
 
-            // Use the hardcoded API_KEY exported from geminiService
-            const ai = new GoogleGenAI({ apiKey: API_KEY });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
             audioContextRefs.current.input = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
             audioContextRefs.current.output = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
